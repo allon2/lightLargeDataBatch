@@ -1,6 +1,6 @@
-package io.wangsl.largedatabtach.support;
+package cn.ymotel.largedatabtach.support;
 
-import io.wangsl.largedatabtach.BatchDataConsumer;
+import cn.ymotel.largedatabtach.BatchDataConsumer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.ibatis.session.ExecutorType;

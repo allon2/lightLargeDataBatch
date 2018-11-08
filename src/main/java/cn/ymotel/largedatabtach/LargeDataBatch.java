@@ -1,4 +1,4 @@
-package io.wangsl.largedatabtach;
+package cn.ymotel.largedatabtach;
 
 public interface LargeDataBatch {
     void init(int batchsize, int threadsize, String beanName);

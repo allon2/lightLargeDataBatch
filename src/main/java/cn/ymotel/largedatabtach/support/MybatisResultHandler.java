@@ -1,6 +1,6 @@
-package io.wangsl.largedatabtach.support;
+package cn.ymotel.largedatabtach.support;
 
-import io.wangsl.largedatabtach.LargeDataBatch;
+import cn.ymotel.largedatabtach.LargeDataBatch;
 import org.apache.ibatis.session.ResultContext;
 import org.apache.ibatis.session.ResultHandler;
 

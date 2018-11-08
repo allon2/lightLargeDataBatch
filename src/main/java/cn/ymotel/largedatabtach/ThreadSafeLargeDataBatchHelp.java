@@ -1,4 +1,4 @@
-package io.wangsl.largedatabtach;
+package cn.ymotel.largedatabtach;
 
 
 import net.jcip.annotations.ThreadSafe;

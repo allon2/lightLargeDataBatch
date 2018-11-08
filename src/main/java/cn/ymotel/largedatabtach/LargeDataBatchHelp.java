@@ -1,7 +1,7 @@
-package io.wangsl.largedatabtach;
+package cn.ymotel.largedatabtach;
 
-import io.wangsl.largedatabtach.pool.InstancePooledObjectFactory;
-import io.wangsl.largedatabtach.pool.SpringBeanPoolFactory;
+import cn.ymotel.largedatabtach.pool.InstancePooledObjectFactory;
+import cn.ymotel.largedatabtach.pool.SpringBeanPoolFactory;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

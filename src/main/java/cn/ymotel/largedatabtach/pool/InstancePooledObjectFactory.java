@@ -4,9 +4,9 @@
  * Copyright 2004-2010 Client Server International, Inc. All rights reserved.
  * CSII PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
-package io.wangsl.largedatabtach.pool;
+package cn.ymotel.largedatabtach.pool;
 
-import io.wangsl.largedatabtach.BatchDataConsumer;
+import cn.ymotel.largedatabtach.BatchDataConsumer;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 
