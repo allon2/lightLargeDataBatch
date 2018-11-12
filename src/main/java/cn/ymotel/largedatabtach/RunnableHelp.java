@@ -85,7 +85,7 @@ public class RunnableHelp {
                         } finally {
                             try {
                                 def.getPool().returnObject(command);
-                            } catch (Exception e) {
+                            } catch (java.lang.Throwable e) {
                                 log.error(e.getMessage());
                             }
                             semaphore.release();

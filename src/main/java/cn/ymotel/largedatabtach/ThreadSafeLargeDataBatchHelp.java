@@ -89,8 +89,8 @@ public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,Lar
 
     /**
      * 程序会将sql和obj数据组成一个数组,放入队列中，在达到阈值将数据放入List中供消费者调用
-     * @param sql
-     * @param obj
+     * @param sql 准备处理的sql语句
+     * @param obj 准备处理的数据
      */
     public void addSql(String sql, Object obj)  {
         Object[] keys = new Object[2];
@@ -100,7 +100,7 @@ public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,Lar
     }
     /**
      * 程序会将obj,放入队列中，在达到阈值将数据放入List中供消费者调用
-     * @param obj
+     * @param obj 准备处理的数据
      */
     public void addData(Object obj){
         LargeDataBatch help= threadHelp.get();
