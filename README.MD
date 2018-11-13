@@ -21,9 +21,9 @@ LargeDataBatch是一个轻量级大数据处理工具,提供简单易用的API�
 
 ```xml
 <dependency>
-    <groupId>com.alibaba</groupId>
-    <artifactId>dubbo</artifactId>
-    <version>2.6.4</version>
+    <groupId>cn.ymotel</groupId>
+    <artifactId>largedatabtach</artifactId>
+    <version>1.0.2</version>
 </dependency>
 ```
 ### Gradle dependency
