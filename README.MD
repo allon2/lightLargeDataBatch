@@ -17,6 +17,22 @@ LargeDataBatch是一个轻量级大数据处理工具,提供简单易用的API�
 
 
 ## Getting Started
+### Maven dependency
+
+```xml
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>dubbo</artifactId>
+    <version>2.6.4</version>
+</dependency>
+```
+### Gradle dependency
+
+```
+compile group: 'cn.ymotel', name: 'largedatabtach', version:'1.0.2'
+
+```
+```
        MybatisBatchDataConsumer mybatisbatch=new MybatisBatchDataConsumer();
        
         mybatisbatch.setSqlSessionFactory(sqlSession);
@@ -52,29 +68,40 @@ LargeDataBatch是一个轻量级大数据处理工具,提供简单易用的API�
  
       消费者可通过spring配置或者通过new方法实例化进行定义。
       程序得到消费者对象后，会生成多个副本，以提高性能
-      消费者类需要实现BatchDataConsumer接口，程序中因为将会生成多个副本,程序在调用end方法后，会销毁程序中的副本，为了避免内存泄漏,请注意在close方法中关闭相应对象
+      消费者类需要实现BatchDataConsumer接口，程序中因为将会生成多个副本,程序在调用end方法后
+      ，会销毁程序中的副本，为了避免内存泄漏,请注意在close方法中关闭相应对象
       程序会调用Runnable的run方法进行数据处理
 
       
       
   ThreadSafeLargeDataBatchHelp 方法介绍:
   
-    LargeDataBatch 目前有LargeDataBatchHelp和ThreadSafeLargeDataBatchHelp两个实现类,推荐使用ThreadSafeLargeDataBatchHelp
+    LargeDataBatch 目前有LargeDataBatchHelp和ThreadSafeLargeDataBatchHelp两个实现类
+    ,推荐使用ThreadSafeLargeDataBatchHelp
     ThreadSafeLargeDataBatchHelp可在spring 中进行配置，供其他类引用。
      
      /**
-      * 设置在一个jvm内的总的最高可并行的线程数,在一个jvm中可能会多个地方调用ThreadSafeLargeDataBatchHelp类。
-      * 如果不加控制，可能导致应用服务器在同一时间线程数过大,应用服务器处理异常情况发生，如果消费者同时超过数据库也可能导致数据库超过阈值情况发生
-     * 不设置,则不会对线程池中的线程数进行总体控制
+      * 设置在一个jvm内的总的最高可并行的线程数,
+      * 在一个jvm中可能会多个地方调用ThreadSafeLargeDataBatchHelp类。
+      * 如果不加控制，可能导致应用服务器在同一时间线程数过大,应用服务器处理异常情况发生，
+      * 如果消费者同时超过数据库也可能导致数据库超过阈值情况发生
+      *不设置,则不会对线程池中的线程数进行总体控制
       * @param totalThreadCount
       */
      public void setTotalThread(int totalThreadCount) {
          
       init方法中参数介绍：
-      beanName是spring中配置的beanName，需配置为singleton="false",需要实现BatchDataInterface 接口 使用此参数需要ThreadSafeLargeDataBatchHelp可得到ApplicationContext对象，推荐在spring中进行自动注入，
-      batchsize在达到批次数后，会将一批数据整体提交到线程池进行处理,在数据库中为了提高性能，对大数据的处理一般都是批次提交，通过开启此batchsize后，可将数据自动分组
-      threadsize线程数,开启多少个线程同时处理此数据,如果是数据处理结果是数据库入库操作，通过调整此大小，可提高或者降低数据库的CPU
-      timeout  超过时间，线程会将未达阀值数据自动提交，如果不设置超时时间，则默认不开启。需要定时轮训读取流信息，无法调用end方法的场景可通过增加此参数，实现自动提交
+      beanName是spring中配置的beanName，需配置为singleton="false",需要实现BatchDataInterface 接口 
+      使用此参数需要ThreadSafeLargeDataBatchHelp可得到ApplicationContext对象，
+      推荐在spring中进行自动注入，
+      batchsize在达到批次数后，会将一批数据整体提交到线程池进行处理,
+      在数据库中为了提高性能，对大数据的处理一般都是批次提交，
+      通过开启此batchsize后，可将数据自动分组
+      threadsize线程数,开启多少个线程同时处理此数据,
+      如果是数据处理结果是数据库入库操作，通过调整此大小，可提高或者降低数据库的CPU
+      timeout  超过时间，线程会将未达阀值数据自动提交，如果不设置超时时间
+      ，则默认不开启。
+      需要定时轮训读取流信息，无法调用end方法的场景可通过增加此参数，实现自动提交
       BatchDataInterface t 是通过new 方法实例化的bean
       /**
          * @param batchsize  在thread中的每次执行条数
@@ -118,7 +145,8 @@ LargeDataBatch是一个轻量级大数据处理工具,提供简单易用的API�
          */
         public void addData(Object obj){
         /**
-         * 数据处理结尾一般会剩余一些未达到batchsize的数据未处理,通过调用此方法,可将未达到阈值的数据提交到线程池中进行处理
+         * 数据处理结尾一般会剩余一些未达到batchsize的数据未处理,通过调用此方法
+         *,可将未达到阈值的数据提交到线程池中进行处理
          */
         public void end() {
       
