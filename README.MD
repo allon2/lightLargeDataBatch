@@ -16,7 +16,7 @@ LargeDataBatch是一个轻量级大数据处理工具,提供简单易用的API�
 
 ## Release Note
  1.0.3版本
-- 1、所有线程一个线程池
+- 1、一个JVM可公用一个线程池
 - 2、增加shutdown方法，关闭线程池
 - 3、增加setThreadpool方法和setScheduleservice方法，外部可传入线程池，如果不传入,使用默认线程池。注意传入线程池线程数需要大于或者等于可能的总的信号量
 
