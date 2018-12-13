@@ -13,10 +13,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * 实现多线程并发执行批量交易,交易数据由主线程顺序提供
@@ -64,7 +61,7 @@ public class LargeDataBatchHelp implements ApplicationContextAware, LargeDataBat
         innerInit(batchsize, threadsize, factory);
     }
 
-    private static java.util.concurrent.ScheduledExecutorService scheduleservice = Executors.newSingleThreadScheduledExecutor();
+    private  java.util.concurrent.ScheduledExecutorService scheduleservice = Executors.newSingleThreadScheduledExecutor();
 
 
 
@@ -112,9 +109,26 @@ public class LargeDataBatchHelp implements ApplicationContextAware, LargeDataBat
         initFixDelaySchedule(timeout);
     }
 
+    public  ScheduledExecutorService getScheduleservice() {
+        return scheduleservice;
+    }
+
+    public  void setScheduleservice(ScheduledExecutorService scheduleservice) {
+        this.scheduleservice = scheduleservice;
+    }
+
+    public  ExecutorService getThreadpool() {
+        return threadpool;
+    }
+
+    public  void setThreadpool(ExecutorService threadpool) {
+        this.threadpool = threadpool;
+    }
+
+    private  ExecutorService threadpool=Executors.newCachedThreadPool();
     private void innerInit(int batchsize, int threadsize, PooledObjectFactory<BatchDataConsumer> pooledObjectFactory) {
         def.setBatchsize(batchsize);
-        def.setRunablehelp(new RunnableHelp(threadsize, Executors.newCachedThreadPool()));
+        def.setRunablehelp(new RunnableHelp(threadsize,threadpool));
         GenericObjectPoolConfig conf = new GenericObjectPoolConfig();
         conf.setMaxTotal(threadsize);
         ObjectPool<BatchDataConsumer> pool = new GenericObjectPool<BatchDataConsumer>(pooledObjectFactory, conf);
@@ -146,7 +160,7 @@ public class LargeDataBatchHelp implements ApplicationContextAware, LargeDataBat
      *
      * @return
      */
-    private Runnable getRunnable(LocalDef def) {
+    private BatchDataConsumer getConsumer(LocalDef def) {
         ObjectPool<BatchDataConsumer> pool = def.getPool();
         if (pool != null) {
             try {
@@ -189,7 +203,7 @@ public class LargeDataBatchHelp implements ApplicationContextAware, LargeDataBat
         }
 
 
-        Object bean = getRunnable(def);
+        BatchDataConsumer bean = getConsumer(def);
 
 
 
@@ -199,7 +213,7 @@ public class LargeDataBatchHelp implements ApplicationContextAware, LargeDataBat
         /**
          * 在此发生阻塞
          */
-        runnableHelp.addRunable((BatchDataConsumer) bean, totalThreadsemaphore, waitForSubmitData, def);
+        runnableHelp.addRunable( bean, totalThreadsemaphore, waitForSubmitData, def);
         log.info("batch--" + def.getBachedsize());
     }
 
@@ -226,5 +240,21 @@ public class LargeDataBatchHelp implements ApplicationContextAware, LargeDataBat
         context = arg0;
     }
 
+    public   void shutdown(){
+        if(threadpool!=null&&(!threadpool.isShutdown())) {
 
+            try {
+                threadpool.shutdown();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        if(scheduleservice!=null&&(!scheduleservice.isShutdown())) {
+            try {
+                scheduleservice.shutdown();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }

@@ -14,7 +14,11 @@ LargeDataBatch是一个轻量级大数据处理工具,提供简单易用的API�
 - 5、充分利用线程池,避免空闲线程
 - 6、数据处理完毕后，可继续执行同步交易
 
-
+## Release Note
+ 1.0.3版本
+- 1、所有线程一个线程池
+- 2、增加shutdown方法，关闭线程池
+- 3、增加setThreadpool方法和setScheduleservice方法，外部可传入线程池，如果不传入,使用默认线程池。注意传入线程池线程数需要大于或者等于可能的总的信号量
 
 ## Getting Started
 ### Maven dependency
@@ -23,13 +27,13 @@ LargeDataBatch是一个轻量级大数据处理工具,提供简单易用的API�
 <dependency>
     <groupId>cn.ymotel</groupId>
     <artifactId>largedatabtach</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 </dependency>
 ```
 ### Gradle dependency
 
 ```
-compile group: 'cn.ymotel', name: 'largedatabtach', version:'1.0.2'
+compile group: 'cn.ymotel', name: 'largedatabtach', version:'1.0.3'
 
 ```
 ```
@@ -149,6 +153,10 @@ compile group: 'cn.ymotel', name: 'largedatabtach', version:'1.0.2'
          *,可将未达到阈值的数据提交到线程池中进行处理
          */
         public void end() {
+        /**
+        *关闭线程池
+        */
+        public void shutdown
       
     
      

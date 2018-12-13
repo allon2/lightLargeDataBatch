@@ -5,6 +5,9 @@ import net.jcip.annotations.ThreadSafe;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 
 
@@ -27,12 +30,30 @@ public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,Lar
 
     private Semaphore totalThreadsemaphore = null;
 
-    private ThreadLocal<LargeDataBatchHelp> threadHelp=new ThreadLocal<LargeDataBatchHelp>(){
+    private static ThreadLocal<LargeDataBatchHelp> threadHelp=new ThreadLocal<LargeDataBatchHelp>(){
         @Override
         protected synchronized LargeDataBatchHelp initialValue() {
-            return new LargeDataBatchHelp();
+             return new LargeDataBatchHelp();
         }
     };
+    private  java.util.concurrent.ScheduledExecutorService scheduleservice = Executors.newSingleThreadScheduledExecutor();
+    private ExecutorService threadpool=Executors.newCachedThreadPool();
+
+    public ScheduledExecutorService getScheduleservice() {
+        return scheduleservice;
+    }
+
+    public void setScheduleservice(ScheduledExecutorService scheduleservice) {
+        this.scheduleservice = scheduleservice;
+    }
+
+    public ExecutorService getThreadpool() {
+        return threadpool;
+    }
+
+    public void setThreadpool(ExecutorService threadpool) {
+        this.threadpool = threadpool;
+    }
 
     private ApplicationContext context;
 
@@ -49,6 +70,12 @@ public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,Lar
         }
         help.init(batchsize,threadsize,beanName);
         help.setTotalThreadsemaphore(totalThreadsemaphore);
+        if(scheduleservice!=null){
+            help.setScheduleservice(scheduleservice);
+        }
+        if(threadpool!=null){
+            help.setThreadpool(threadpool);
+        }
     }
 
 
@@ -64,6 +91,12 @@ public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,Lar
             help.setApplicationContext(context);
         }
         help.init(batchsize,threadsize,beanName,timeout);
+        if(scheduleservice!=null){
+            help.setScheduleservice(scheduleservice);
+        }
+        if(threadpool!=null){
+            help.setThreadpool(threadpool);
+        }
     }
 
 
@@ -73,8 +106,15 @@ public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,Lar
      * @param t   实现 BatchDataInterface 的对象
      */
     public void init(int batchsize, int threadsize, BatchDataConsumer t) {
-        LargeDataBatch help= threadHelp.get();
+        LargeDataBatchHelp help= threadHelp.get();
         help.init(batchsize,threadsize,t);
+        if(scheduleservice!=null){
+            help.setScheduleservice(scheduleservice);
+        }
+        if(threadpool!=null){
+            help.setThreadpool(threadpool);
+        }
+
     }
     /**
      * @param batchsize  在thread中的每次执行条数
@@ -83,8 +123,14 @@ public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,Lar
      * @param timeout    超过时间，线程会将未达阀值数据，自动提交
      */
     public void init(int batchsize, int threadsize, BatchDataConsumer t, long timeout) {
-        LargeDataBatch help= threadHelp.get();
+        LargeDataBatchHelp help= threadHelp.get();
         help.init(batchsize,threadsize,t,timeout);
+        if(scheduleservice!=null){
+            help.setScheduleservice(scheduleservice);
+        }
+        if(threadpool!=null){
+            help.setThreadpool(threadpool);
+        }
     }
 
     /**
@@ -113,6 +159,27 @@ public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,Lar
     public void end() {
         LargeDataBatch help= threadHelp.get();
         help.end();
+        threadHelp.remove();
+    }
+
+//    @Override
+    public void shutdown() {
+
+        if(threadpool!=null&&(!threadpool.isShutdown())) {
+
+            try {
+                threadpool.shutdown();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        if(scheduleservice!=null&&(!scheduleservice.isShutdown())) {
+            try {
+                scheduleservice.shutdown();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override

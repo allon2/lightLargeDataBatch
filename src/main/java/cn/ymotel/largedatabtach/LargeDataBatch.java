@@ -14,4 +14,5 @@ public interface LargeDataBatch {
     void addData(Object obj);
 
     void end();
+
 }

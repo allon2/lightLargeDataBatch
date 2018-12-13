@@ -21,10 +21,11 @@ public class RunnableHelp {
     }
 
     private ExecutorService executors = null;
-
+    private  int poolsize=0;
 
     public RunnableHelp(int poolsize, ExecutorService executors) {
         super();
+        this.poolsize=poolsize;
 //		executors=Executors.newFixedThreadPool(poolsize);
         this.executors = executors;
         semaphore = new Semaphore(poolsize, true);
@@ -109,16 +110,22 @@ public class RunnableHelp {
     }
 
     public void end() {
-        executors.shutdown();
         try {
-            boolean loop = true;
-            do {    //等待所有任务完成
-                loop = !executors.awaitTermination(2, TimeUnit.SECONDS);
-            } while (loop);
+            semaphore.acquire(this.poolsize);
+            semaphore.release(this.poolsize);
         } catch (InterruptedException e) {
-            log.error(e.getMessage());
-            Thread.currentThread().interrupt();
+            e.printStackTrace();
         }
+//        executors.shutdown();
+//        try {
+//            boolean loop = true;
+//            do {    //等待所有任务完成
+//                loop = !executors.awaitTermination(2, TimeUnit.SECONDS);
+//            } while (loop);
+//        } catch (InterruptedException e) {
+//            log.error(e.getMessage());
+//            Thread.currentThread().interrupt();
+//        }
 
     }
 }
