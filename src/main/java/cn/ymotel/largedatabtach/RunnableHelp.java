@@ -2,8 +2,12 @@ package cn.ymotel.largedatabtach;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.pool2.ObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
@@ -23,12 +27,23 @@ public class RunnableHelp {
     private ExecutorService executors = null;
     private  int poolsize=0;
 
+//    private static ObjectPool runablepool=null;
+//    static{
+//        GenericObjectPoolConfig conf = new GenericObjectPoolConfig();
+//        conf.setMaxTotal(Integer.MAX_VALUE);
+//        ObjectPool<BatchDataConsumer> pool = new GenericObjectPool<BatchDataConsumer>(pooledObjectFactory, conf);
+//
+//    }
+
     public RunnableHelp(int poolsize, ExecutorService executors) {
         super();
         this.poolsize=poolsize;
 //		executors=Executors.newFixedThreadPool(poolsize);
         this.executors = executors;
         semaphore = new Semaphore(poolsize, true);
+    }
+    public RunnableHelp(int poolsize) {
+        this(poolsize,null);
     }
 
     /**
@@ -38,7 +53,13 @@ public class RunnableHelp {
      */
     public void addRunable(final BatchDataConsumer command, final Semaphore totalsemaphore, boolean waitForSubmitData, final LocalDef def) {
         try {
-
+            List ls = def.getData();
+            if (ls == null || ls.isEmpty()) {
+                return;
+            }
+            if(command==null){
+                return ;
+            }
 
             if (waitForSubmitData) {
                 /**
@@ -65,50 +86,70 @@ public class RunnableHelp {
              *  def.getData中的数据大于0的情况下，当前线程是可以往里面继续放入数据的，所以可能在执行信号量请求时数据为1，在command.setData时数据量已经发生改变，变为2，中间有个时间差，目前此时间应该极少，暂时不考虑
              */
 
-            List ls = def.getData();
-            if (ls == null || ls.isEmpty()) {
-                return;
+            if(executors!=null) {
+                def.getLock().lock();
             }
-            def.getLock().lock();
             command.setData(ls);
-            def.setData(new ArrayList());
+            def.setData(Collections.synchronizedList(new ArrayList()));
             def.setLastUdateTime(System.currentTimeMillis());
             def.setBachedsize(def.getBachedsize() + ls.size());
-            log.info("batch--" + def.getBachedsize());
-            def.getLock().unlock();
+            log.debug("batch--" + def.getBachedsize());
+            if(executors!=null) {
 
-            try {
-                executors.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            command.run();
-                        } finally {
-                            try {
-                                def.getPool().returnObject(command);
-                            } catch (java.lang.Throwable e) {
-                                log.error(e.getMessage());
-                            }
-                            semaphore.release();
-                            if (totalsemaphore != null) {
-                                totalsemaphore.release();
-                            }
-                        }
+                def.getLock().unlock();
+            }
+            WrapBatchDataConsumerRunnable runnable= (WrapBatchDataConsumerRunnable)def.getKeyedPool().borrowObject(WrapBatchDataConsumerRunnable.class);
+            runnable.setCommand(command);
+            runnable.setTotalsemaphore(totalsemaphore);
+            runnable.setDef(def);
+            runnable.setSemaphore(semaphore);
+            runnable.setKeyedPool(def.getKeyedPool());
+
+
+            if(executors==null){
+                runnable.run();
+//                CommandRun(command,totalsemaphore,def);
+            }else {
+
+                try {
+                    executors.execute(runnable);
+//                    executors.execute(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            CommandRun(command,totalsemaphore,def);
+//                        }
+//                    });
+                } catch (RejectedExecutionException e) {
+                    semaphore.release();
+                    if (totalsemaphore != null) {
+                        totalsemaphore.release();
                     }
-                });
-            } catch (RejectedExecutionException e) {
-                semaphore.release();
-                if (totalsemaphore != null) {
-                    totalsemaphore.release();
+                    throw e;
                 }
-                throw e;
             }
         } catch (InterruptedException e) {
             log.error(e.getMessage());
             Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
-
+//    private void  CommandRun(BatchDataConsumer command,Semaphore totalsemaphore,LocalDef def ){
+//        try {
+//            command.run();
+//        } finally {
+//            try {
+//                def.getKeyedPool().returnObject(def.getPoolkey(), command);
+//            } catch (java.lang.Throwable e) {
+//
+//                log.error(e.getMessage());
+//            }
+//            semaphore.release();
+//            if (totalsemaphore != null) {
+//                totalsemaphore.release();
+//            }
+//        }
+//    }
     public void end() {
         try {
             semaphore.acquire(this.poolsize);

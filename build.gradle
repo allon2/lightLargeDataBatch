@@ -5,7 +5,7 @@ buildscript {
         maven { url "http://maven.aliyun.com/nexus/content/groups/public" }
     }
     dependencies {
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
         classpath 'com.github.dcendents:android-maven-gradle-plugin:1.3'
     }
 }
@@ -21,7 +21,7 @@ tasks.withType(JavaCompile) {
 }
 
 group = 'cn.ymotel'
-version = '1.0.3'
+version = PROJ_VERSION
 
 description = "largedatabtach"
 
@@ -38,12 +38,13 @@ repositories {
 }
 dependencies {
 // https://mvnrepository.com/artifact/org.apache.commons/commons-pool2
-    compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.6.0'
+    compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.8.0'
 // https://mvnrepository.com/artifact/org.springframework/spring-beans
     compile group: 'org.springframework', name: 'spring-context', version: '4.3.20.RELEASE'
     compile group: 'net.jcip', name: 'jcip-annotations', version:'1.0'
 // https://mvnrepository.com/artifact/org.mybatis/mybatis
     compile group: 'org.mybatis', name: 'mybatis', version: '3.4.6'
+//    compile group: 'com.google.guava', name: 'guava', version: '28.1-jre'
 
 }
 apply from: 'bintray.gradle'

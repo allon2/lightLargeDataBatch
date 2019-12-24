@@ -1,16 +1,13 @@
 package cn.ymotel.largedatabtach;
 
-import cn.ymotel.largedatabtach.pool.BatchDataConsumerKeyedPooledObjectFactory;
 import cn.ymotel.largedatabtach.pool.InstancePooledObjectFactory;
 import cn.ymotel.largedatabtach.pool.SpringBeanPoolFactory;
 import net.jcip.annotations.NotThreadSafe;
+import net.jcip.annotations.ThreadSafe;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.pool2.KeyedObjectPool;
 import org.apache.commons.pool2.ObjectPool;
 import org.apache.commons.pool2.PooledObjectFactory;
-import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
-import org.apache.commons.pool2.impl.GenericKeyedObjectPoolConfig;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.context.ApplicationContext;
@@ -24,9 +21,9 @@ import java.util.concurrent.*;
  *
  * @author Administrator
  */
-@NotThreadSafe
-public class LargeDataBatchHelp implements ApplicationContextAware, LargeDataBatch {
-    private static Log log = LogFactory.getLog(LargeDataBatchHelp.class);
+@ThreadSafe
+public class AsycnLargeDataBatchHelp implements ApplicationContextAware, LargeDataBatch {
+    private static Log log = LogFactory.getLog(AsycnLargeDataBatchHelp.class);
 
     public void setTotalThread(int totalThreadCount) {
         totalThreadsemaphore = new Semaphore(totalThreadCount, true);
@@ -51,16 +48,6 @@ public class LargeDataBatchHelp implements ApplicationContextAware, LargeDataBat
 
     private ApplicationContext context;
 
-    private KeyedObjectPool<Object,BatchDataConsumer>  keyedPool;
-
-    public KeyedObjectPool<Object, BatchDataConsumer> getKeyedPool() {
-        return keyedPool;
-    }
-
-    public void setKeyedPool(KeyedObjectPool<Object, BatchDataConsumer> keyedPool) {
-        this.keyedPool = keyedPool;
-    }
-    private Object poolkey=null;
 
     /**
      * @param batchsize  在thread中的每次执行条数
@@ -69,13 +56,13 @@ public class LargeDataBatchHelp implements ApplicationContextAware, LargeDataBat
      */
     @Override
     public void init(int batchsize, int threadsize, String beanName) {
-        poolkey=beanName;
-        def.setKeyedPool(keyedPool);
-        def.setPoolkey(poolkey);
-        innerInit(batchsize, threadsize);
+        SpringBeanPoolFactory factory = new SpringBeanPoolFactory();
+        factory.setSpringcontext(context);
+        factory.setBeanName(beanName);
+        innerInit(batchsize, threadsize, factory);
     }
 
-    private  java.util.concurrent.ScheduledExecutorService scheduleservice = Executors.newSingleThreadScheduledExecutor();
+    private  ScheduledExecutorService scheduleservice = Executors.newSingleThreadScheduledExecutor();
 
 
 
@@ -87,9 +74,6 @@ public class LargeDataBatchHelp implements ApplicationContextAware, LargeDataBat
      */
     @Override
     public void init(int batchsize, int threadsize, String beanName, long timeout) {
-        poolkey=beanName;
-        def.setKeyedPool(keyedPool);
-        def.setPoolkey(poolkey);
         init(batchsize, threadsize, beanName);
         initFixDelaySchedule(timeout);
     }
@@ -115,17 +99,14 @@ public class LargeDataBatchHelp implements ApplicationContextAware, LargeDataBat
 
     @Override
     public void init(int batchsize, int threadsize, BatchDataConsumer t) {
-
-        poolkey=t;
-         def.setKeyedPool(keyedPool);
-        def.setPoolkey(poolkey);
-        innerInit(batchsize, threadsize);
+        InstancePooledObjectFactory factory = new InstancePooledObjectFactory();
+        factory.setInstance(t);
+        innerInit(batchsize, threadsize, factory);
     }
 
     @Override
     public void init(int batchsize, int threadsize, BatchDataConsumer t, long timeout) {
         init(batchsize, threadsize, t);
-
         initFixDelaySchedule(timeout);
     }
 
@@ -137,22 +118,14 @@ public class LargeDataBatchHelp implements ApplicationContextAware, LargeDataBat
         this.scheduleservice = scheduleservice;
     }
 
-    public  ExecutorService getThreadpool() {
-        return threadpool;
-    }
-
-    public  void setThreadpool(ExecutorService threadpool) {
-        this.threadpool = threadpool;
-    }
-
-    private  ExecutorService threadpool=Executors.newCachedThreadPool();
-    private void innerInit(int batchsize, int threadsize) {
+    private void innerInit(int batchsize, int threadsize, PooledObjectFactory<BatchDataConsumer> pooledObjectFactory) {
         def.setBatchsize(batchsize);
-        def.setRunablehelp(new RunnableHelp(threadsize,threadpool));
-        def.setKeyedPool(keyedPool);
-         def.setPoolkey(poolkey);
+        def.setRunablehelp(new RunnableHelp(threadsize));
+        GenericObjectPoolConfig conf = new GenericObjectPoolConfig();
+        conf.setMaxTotal(threadsize);
+        ObjectPool<BatchDataConsumer> pool = new GenericObjectPool<BatchDataConsumer>(pooledObjectFactory, conf);
+//        def.setPool(pool);
     }
-
 
     @Override
     public void addSql(String sql, Object obj){
@@ -180,16 +153,17 @@ public class LargeDataBatchHelp implements ApplicationContextAware, LargeDataBat
      * @return
      */
     private BatchDataConsumer getConsumer(LocalDef def) {
-        if (keyedPool != null) {
-            try {
-                return this.keyedPool.borrowObject(poolkey);
-            } catch (Exception e) {
-             log.error(e.getMessage());
-
-            }
-        }
+//        ObjectPool<BatchDataConsumer> pool = def.getPool();
+//        if (pool != null) {
+//            try {
+//                return pool.borrowObject();
+//            } catch (Exception e) {
+//             log.error(e.getMessage());
+//
+//            }
+//        }
+//        return null;
         return null;
-
     }
 
     private void UpdateBatch(boolean isEnd) {
@@ -258,14 +232,7 @@ public class LargeDataBatchHelp implements ApplicationContextAware, LargeDataBat
     }
 
     public   void shutdown(){
-        if(threadpool!=null&&(!threadpool.isShutdown())) {
 
-            try {
-                threadpool.shutdown();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
         if(scheduleservice!=null&&(!scheduleservice.isShutdown())) {
             try {
                 scheduleservice.shutdown();

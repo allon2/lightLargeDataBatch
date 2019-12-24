@@ -15,6 +15,9 @@ LargeDataBatch是一个轻量级大数据处理工具,提供简单易用的API�
 - 6、数据处理完毕后，可继续执行同步交易
 
 ## Release Note
+ 1.0.4版本
+- 1、优化代码,复用对象
+
  1.0.3版本
 - 1、一个JVM可公用一个线程池
 - 2、增加shutdown方法，关闭线程池
@@ -27,7 +30,7 @@ LargeDataBatch是一个轻量级大数据处理工具,提供简单易用的API�
 <dependency>
     <groupId>cn.ymotel</groupId>
     <artifactId>largedatabtach</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
 </dependency>
 ```
 ### Gradle dependency

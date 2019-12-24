@@ -1,7 +1,12 @@
 package cn.ymotel.largedatabtach;
 
 
+import cn.ymotel.largedatabtach.pool.BatchDataConsumerKeyedPooledObjectFactory;
 import net.jcip.annotations.ThreadSafe;
+import org.apache.commons.pool2.KeyedObjectPool;
+import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
+import org.apache.commons.pool2.impl.GenericKeyedObjectPoolConfig;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -17,7 +22,7 @@ import java.util.concurrent.Semaphore;
  * @author Administrator
  */
 @ThreadSafe
-public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,LargeDataBatch {
+public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,LargeDataBatch, InitializingBean {
     /**
      * 设置在一个jvm内的总的最高可并行的线程数,在一个jvm中可能会多个地方调用ThreadSafeLargeDataBatchHelp类。
      * 如果不加控制，可能导致应用服务器在同一时间线程数过大,应用服务器处理异常情况发生，如果消费者同时超过数据库也可能导致数据库超过阈值情况发生
@@ -56,6 +61,7 @@ public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,Lar
     }
 
     private ApplicationContext context;
+    private KeyedObjectPool<Object,BatchDataConsumer>  keyedPool;
 
 
     /**
@@ -68,7 +74,8 @@ public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,Lar
         if(context!=null){
             help.setApplicationContext(context);
         }
-        help.init(batchsize,threadsize,beanName);
+        help.setKeyedPool(keyedPool);
+
         help.setTotalThreadsemaphore(totalThreadsemaphore);
         if(scheduleservice!=null){
             help.setScheduleservice(scheduleservice);
@@ -76,6 +83,8 @@ public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,Lar
         if(threadpool!=null){
             help.setThreadpool(threadpool);
         }
+        help.init(batchsize,threadsize,beanName);
+
     }
 
 
@@ -87,16 +96,19 @@ public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,Lar
      */
     public void init(int batchsize, int threadsize, String beanName, long timeout) {
         LargeDataBatchHelp help= threadHelp.get();
+        help.setKeyedPool(keyedPool);
+
         if(context!=null){
             help.setApplicationContext(context);
         }
-        help.init(batchsize,threadsize,beanName,timeout);
         if(scheduleservice!=null){
             help.setScheduleservice(scheduleservice);
         }
         if(threadpool!=null){
             help.setThreadpool(threadpool);
         }
+        help.init(batchsize,threadsize,beanName,timeout);
+
     }
 
 
@@ -107,13 +119,15 @@ public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,Lar
      */
     public void init(int batchsize, int threadsize, BatchDataConsumer t) {
         LargeDataBatchHelp help= threadHelp.get();
-        help.init(batchsize,threadsize,t);
         if(scheduleservice!=null){
             help.setScheduleservice(scheduleservice);
         }
         if(threadpool!=null){
             help.setThreadpool(threadpool);
         }
+        help.setKeyedPool(keyedPool);
+        help.init(batchsize,threadsize,t);
+
 
     }
     /**
@@ -124,13 +138,15 @@ public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,Lar
      */
     public void init(int batchsize, int threadsize, BatchDataConsumer t, long timeout) {
         LargeDataBatchHelp help= threadHelp.get();
-        help.init(batchsize,threadsize,t,timeout);
         if(scheduleservice!=null){
             help.setScheduleservice(scheduleservice);
         }
         if(threadpool!=null){
             help.setThreadpool(threadpool);
         }
+        help.setKeyedPool(keyedPool);
+        help.init(batchsize,threadsize,t,timeout);
+
     }
 
     /**
@@ -164,6 +180,7 @@ public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,Lar
 
 //    @Override
     public void shutdown() {
+        keyedPool.close();
 
         if(threadpool!=null&&(!threadpool.isShutdown())) {
 
@@ -187,4 +204,19 @@ public class ThreadSafeLargeDataBatchHelp implements ApplicationContextAware,Lar
         context = arg0;
     }
 
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        if(keyedPool==null) {
+            GenericKeyedObjectPoolConfig genericKeyedObjectPoolConfig = new GenericKeyedObjectPoolConfig();
+            if (totalThreadsemaphore != null) {
+                genericKeyedObjectPoolConfig.setMaxTotalPerKey(totalThreadsemaphore.availablePermits());
+            } else {
+                genericKeyedObjectPoolConfig.setMaxTotalPerKey(Integer.MAX_VALUE);
+            }
+            BatchDataConsumerKeyedPooledObjectFactory batchDataConsumerKeyedPooledObjectFactory = new BatchDataConsumerKeyedPooledObjectFactory();
+            batchDataConsumerKeyedPooledObjectFactory.setSpringcontext(this.context);
+            keyedPool = new GenericKeyedObjectPool<Object, BatchDataConsumer>(batchDataConsumerKeyedPooledObjectFactory);
+        }
+
+    }
 }

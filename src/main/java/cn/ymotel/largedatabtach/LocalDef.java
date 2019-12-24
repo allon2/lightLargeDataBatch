@@ -1,9 +1,11 @@
 package cn.ymotel.largedatabtach;
 
+import org.apache.commons.pool2.KeyedObjectPool;
 import org.apache.commons.pool2.ObjectPool;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.locks.Lock;
@@ -17,7 +19,7 @@ public class LocalDef {
     private int batchsize = 0;
     private RunnableHelp runablehelp;
     private ObjectPool<BatchDataConsumer> pool = null;
-    private List data = new ArrayList();
+    private List data = Collections.synchronizedList(new ArrayList());
     private Timestamp beginTime = new Timestamp(System.currentTimeMillis());
 
     public Timestamp getBeginTime() {
@@ -76,12 +78,25 @@ public class LocalDef {
         this.runablehelp = runablehelp;
     }
 
-    public ObjectPool<BatchDataConsumer> getPool() {
-        return pool;
+
+    private Object poolkey=null;
+
+    public Object getPoolkey() {
+        return poolkey;
     }
 
-    public void setPool(ObjectPool<BatchDataConsumer> pool) {
-        this.pool = pool;
+    public void setPoolkey(Object poolkey) {
+        this.poolkey = poolkey;
+    }
+
+    private KeyedObjectPool keyedPool;
+
+    public KeyedObjectPool getKeyedPool() {
+        return keyedPool;
+    }
+
+    public void setKeyedPool(KeyedObjectPool keyedPool) {
+        this.keyedPool = keyedPool;
     }
 
     public List getData() {
